@@ -23,8 +23,8 @@ How-to
 ```
 
 **Step 3**. Define your DOI function, following the format below.
-    - `node`: HTMLElement object of the node representing this DOI
-    - `val`: strength of the signal (higher the better, min: 0, default: 0)
+- `node`: HTMLElement object of the node representing this DOI.
+- `val`: strength of the signal (higher the better, min: 0, default: 0)
 ```javascript
 var doi = [
     {"node": entries[20], "val": 30},
