@@ -9,9 +9,9 @@ scroll.js is the main library.
 
 How-to
 ------
-Step 1. Create an HTML file to apply kinetic scrolling to.
+**Step 1**. Create an HTML file to apply kinetic scrolling to.
 
-Step 2. Include the required CSS and Javascript. (refer to p1.html for examples)
+**Step 2**. Include the required CSS and Javascript. (refer to p1.html for examples)
 ```html
 <link rel="stylesheet" href="css/pure-nr-min.css">
 <link rel="stylesheet" href="css/style.css">
@@ -23,7 +23,7 @@ Step 2. Include the required CSS and Javascript. (refer to p1.html for examples)
 <script src="js/scroll.js"></script>
 ```
 
-Step 3. Define your DOI function, following the format below.
+**Step 3**. Define your DOI function, following the format below.
     - "node": HTMLElement object of the node representing this DOI
     - "val": strength of the signal (higher the better, min: 0, default: 0)
 ```javascript
@@ -36,7 +36,7 @@ var doi = [
 ];
 ```
 
-Step 4. Run KineticScrolling.init() with configuration parameters.
+**Step 4**. Run KineticScrolling.init() with configuration parameters.
 For a full list of options, refer to scroll.js.
 For a minimal setup, include "contentID" (DOM ID of the entire page) and "doi" (the DOI function definition).
 ```javascript
