@@ -14,6 +14,7 @@ How-to
       <link rel="stylesheet" href="css/pure-nr-min.css">
       <link rel="stylesheet" href="css/style.css">
 ```
+
     - Javascript:
 ```
       <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
