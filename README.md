@@ -11,13 +11,10 @@ How-to
 ------
 1. Create an HTML file to apply kinetic scrolling to.
 2. Include the required CSS and Javascript. (refer to p1.html for examples)
-    - CSS:
 ```html
       <link rel="stylesheet" href="css/pure-nr-min.css">
       <link rel="stylesheet" href="css/style.css">
 ```
-
-    - Javascript:
 ```html
       <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
       <script>window.jQuery || document.write('<script src="js/jquery-1.11.0.min.js" type="text/javascript"><\/script>')</script>
