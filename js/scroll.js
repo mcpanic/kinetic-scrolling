@@ -164,6 +164,7 @@ var KineticScrolling = function ($, window, document) {
     var timeFreeze = 0;
     var isTimeUpdated = true;
     function autoScroll() {
+        var i, curPeak;
         penaltyCount -= 1;
         if (penaltyCount == 0 && !isTimeUpdated) {
             // time interval where no action took place.
@@ -177,6 +178,7 @@ var KineticScrolling = function ($, window, document) {
         if (amplitude) {
             // time elapsed from the initial release
             elapsed = Date.now() - timestamp - timeFreezeElapsed;
+            // elapsed = Date.now() - timestamp;
             delta = -amplitude * Math.exp(-elapsed / config.timeConstant);
             peaksInRange = getPeaksInRange(offset, target + delta);
             // if (peakIncluded) {
@@ -187,17 +189,21 @@ var KineticScrolling = function ($, window, document) {
                 // if peak is included in this turn, decelerate based on DOI
                 console.log("cur", parseInt(offset), "tar", target, "del", parseInt(delta), peaksInRange["peaks"].length > 0);
                 if (peaksInRange["peaks"].length > 0) {
-                    for (var i = 0; i < peaksInRange["peaks"].length; i++) {
-                        if (!peaksInRange["peaks"][i]["dirty"]) {
+                    for (i = 0; i < peaksInRange["peaks"].length; i++) {
+                        curPeak = peaksInRange["peaks"][i];
+                        if (!curPeak["dirty"] && curPeak["val"] >= 50) {
                             recentDelta = delta;
                             scroll(target + recentDelta);
                             // update target based on how much we lost due to peak friction
                             // target += 0.95 * delta;
-                            penaltyCount = 20;
+                            penaltyCount = 30;
                             isTimeUpdated = false;
                             timeFreeze = Date.now();
-                            $("#" + peaksInRange['peaks'][i]['id']).stop(true, true);
-                            $("#" + peaksInRange['peaks'][i]['id']).show().fadeOut(2000);
+                            $("#" + curPeak['id'])
+                                .stop(true, true) // cancel any pending fadeout
+                                .show()
+                                .css("background-color", "rgba(200,0,0," + curPeak["val"]/100 + ")")
+                                .fadeOut(3000);
                             peaksInRange["peaks"][i]["dirty"] = true;
                             console.log("DECEL", peaksInRange["peaks"][i]["id"]);
                         }
