@@ -34,7 +34,7 @@ var KineticScrolling = function ($, window, document) {
 
         // When constructing a hill around a doi, how wide should it be? (in pixels)
         // doiRange * 2 is the full range (uphill + downhill)
-        doiRange: 200
+        doiRange: 500
     };
 
     var view, indicator, relative,
@@ -121,7 +121,7 @@ var KineticScrolling = function ($, window, document) {
             config.doi[i]["id"] = "doi-" + i;
             config.doi[i]["y"] = node.offsetTop;
         }
-        config.doiSnappingPosition = screen.height / 2.5;
+        config.doiSnappingPosition = 0; //screen.height / 2.5;
         console.log(config.doi, config.doiSnappingPosition);
         // TODO sort based on offset?
     }
@@ -150,6 +150,7 @@ var KineticScrolling = function ($, window, document) {
 
         view.style[xform] = 'translateY(' + (-offset) + 'px)';
         indicator.style[xform] = 'translateY(' + (offset * relative) + 'px)';
+        // api.scrollTo(0, offset);
     }
 
     function track() {
@@ -219,16 +220,17 @@ var KineticScrolling = function ($, window, document) {
         return config.timeConstant;
     }
 
+    var k;
     function getAmplitude(amplitude, offset) {
         var i;
         var point;
         var hitPeak = false;
-        var newAmplitude = 0;
+        var newAmplitude = amplitude;
         for (i = 0; i < config.doi.length; i++) {
             // console.log(config.doi[i]);
             point = config.doi[i]["y"];
             // current offset is within the range of a hill caused by this doi
-            // hill width: +/-config.doiSnappingPosition
+            // hill width: +/-config.doiRange
             if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
                 if (!duringPeak)
                     peakFreeze = 20;
@@ -237,7 +239,13 @@ var KineticScrolling = function ($, window, document) {
                 // console.log("getSlope", newTimeConstant);
                 console.log("UPHILL");
                 hitPeak = true;
-                newAmplitude = amplitude * 0.95;
+                // newAmplitude = amplitude * 0.95;
+                var a = 2 * config.doi[i]["val"] / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
+                var factor = Math.abs(a / Math.sqrt(a * a + 1));
+                // if (typeof k === "undefined")
+                    k = 0.99 / factor;
+                console.log(a, factor, k, factor * k);
+                newAmplitude = amplitude * factor * k;
                 break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
                 if (!duringPeak)
@@ -247,7 +255,11 @@ var KineticScrolling = function ($, window, document) {
                 // console.log("getSlope", newTimeConstant);
                 console.log("DOWNHILL");
                 hitPeak = true;
-                newAmplitude = amplitude * 0.95;
+                // newAmplitude = amplitude * 0.95;
+                var a = 2 * config.doi[i]["val"] / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
+                var factor = Math.abs(a / Math.sqrt(a * a + 1));
+                console.log(a, factor);
+                newAmplitude = amplitude * factor;
                 break;
             }
         }
@@ -257,8 +269,125 @@ var KineticScrolling = function ($, window, document) {
         return newAmplitude;
     }
 
-    var storedOffset;
+    function getSinTheta() {
+        var i;
+        var point;
+        var hitPeak = false;
+        // var newAmplitude = amplitude;
+        var a, factor = 0;
+        for (i = 0; i < config.doi.length; i++) {
+            // console.log(config.doi[i]);
+            point = config.doi[i]["y"];
+            // current offset is within the range of a hill caused by this doi
+            // hill width: +/-config.doiRange
+            if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
+                console.log("UPHILL");
+                a = 2 * config.doi[i]["val"] * 10000 / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
+                break;
+            } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
+                console.log("DOWNHILL");
+                a = 2 * config.doi[i]["val"] * 10000 / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
+                break;
+            }
+        }
+        factor = Math.abs(a / Math.sqrt(a * a + 1));
+        console.log(a, factor);
+        return factor;
+    }
+
+    function isInPeak() {
+        var hitPeak = false;
+        var i, point;
+        for (i = 0; i < config.doi.length; i++) {
+            // console.log(config.doi[i]);
+            point = config.doi[i]["y"];
+            // current offset is within the range of a hill caused by this doi
+            // hill width: +/-config.doiRange
+            if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
+                // duringPeak = true;
+                // console.log("getSlope", newTimeConstant);
+                hitPeak = true;
+                break;
+            } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
+                // duringPeak = true;
+                // console.log("getSlope", newTimeConstant);
+                hitPeak = true;
+                break;
+            }
+        }
+        return hitPeak;
+    }
+
+
+    var curV;
+    var g;
+    var curTarget;
+    var timeSinceLastCall;
+    var oldTime;
+    var oldOffset;
+    var accel;
     function autoScroll() {
+        var elapsed;
+        var now = Date.now();
+        var isForwardScrolling = true;
+        // transition from peak to non-peak
+        if (duringPeak && !isInPeak()) {
+            console.log("TRANSITION p -> np");
+            duringPeak = false;
+            amplitude = curV * config.timeConstant;
+            // console.log("A", amplitude);
+            timestamp = now;
+        } else if (!duringPeak && isInPeak()) {
+            console.log("TRANSITION np -> p");
+            duringPeak = true;
+            curV = accel * config.timeConstant;
+            g = curV / config.timeConstant;
+            // console.log(curV, g);
+            timestamp = now;
+        }
+
+        timeSinceLastCall = now - oldTime; // total time since last autoScroll call
+        oldTime = now;
+        elapsed = now - timestamp; // total time since last transition
+
+        // console.log("  TIME", timeSinceLastCall);
+        if (duringPeak) {
+            accel = g * getSinTheta();
+        } else {
+            accel = amplitude / (config.timeConstant * config.timeConstant) * Math.exp(-elapsed / config.timeConstant);
+        }
+        if (accel > 0 && oldOffset >= 0) {
+            console.log("forward");
+        } else if (accel < 0 && oldOffset <= 0) {
+            console.log("backward");
+            isForwardScrolling = false;
+        } else {
+            console.log("IMPOSSIBLE");
+        }
+        // console.log("AAA", accel, oldOffset);
+        oldOffset = accel;
+        curV = curV - accel * timeSinceLastCall;
+        // console.log(timeSinceLastCall, curV * timeSinceLastCall);
+        // at least one pixel to move should be available.
+        if ((isForwardScrolling && curV * timeSinceLastCall >= 1) ||
+            (!isForwardScrolling && curV * timeSinceLastCall <= -1)){
+            curTarget = curTarget + curV * timeSinceLastCall;
+            curTarget = (curTarget > max) ? max : (curTarget < min) ? min : curTarget;
+            scroll(curTarget);
+            requestAnimationFrame(autoScroll);
+        } else {
+            curTarget = (curTarget > max) ? max : (curTarget < min) ? min : curTarget;
+            scroll(curTarget);
+            console.log("HERE", offset)
+        }
+        return;
+    }
+
+
+
+    var storedOffset;
+    var interval=0;
+    function autoScroll_quadratic() {
         // console.log("      ", parseInt(storedOffset), parseInt(offset), parseInt(offset - storedOffset));
         // if (typeof storedOffset === "undefined") {
         //     storedOffset = offset;
@@ -271,10 +400,14 @@ var KineticScrolling = function ($, window, document) {
         var snappingIntensity = 0.5;
         if (amplitude) {
             elapsed = Date.now() - timestamp;
-            // var newAmplitude = getAmplitude(amplitude, offset);
-            var newAmplitude = amplitude;
+            // console.log(elapsed-interval);
+            // interval = elapsed;
+            var newAmplitude = getAmplitude(amplitude, offset);
+            // var newAmplitude = amplitude;
             delta = -newAmplitude * Math.exp(-elapsed / newTimeConstant);
-
+            // delta = amplitude * elapsed/1000 + 0.5 * (-0.000325) * elapsed * elapsed;
+            // if (delta >)
+            console.log(offset, delta);
             // add the edge restrictions to auto scroll instead
             newTarget = (target > max) ? max : (target < min) ? min : target;
             // console.log("TARGET", newTarget, parseInt(target + delta));
@@ -431,7 +564,24 @@ var KineticScrolling = function ($, window, document) {
     function markPeaks() {
         var i;
         for (i = 0; i < config.doi.length; i++) {
-            $("<div/>").addClass("peak").attr("id", config.doi[i]["id"]).css("top", config.doi[i]["y"]).appendTo("#view");
+            $("<div/>")
+                .addClass("peak-item")
+                .attr("id", config.doi[i]["id"] + "-peak-item")
+                .css("top", config.doi[i]["y"])
+                .appendTo(view);
+            var relHeight = (config.doiRange * 2 * 100 / $("#" + config.contentID).height());
+            var relTop = (config.doi[i]["y"]*100 / $("#" + config.contentID).height());
+            $("<div/>")
+                .addClass("peak-summary")
+                .attr("id", config.doi[i]["id"] + "-peak-summary")
+                .css("top", (relTop - relHeight / 2) + "%")
+                .css("left", 0)
+                .css("border-top", (relHeight / 2 / 100 * window.screen.height) + "px solid transparent")
+                .css("border-bottom", (relHeight / 2 / 100 * window.screen.height) + "px solid transparent")
+                .css("border-left", config.doi[i]["val"] / 2 + "px solid rgba(0, 200, 0, 0.5)")
+                // .css("width", (config.doi[i]["val"] / 2) + "px")
+                // .css("height", relHeight + "%")
+                .appendTo($("body"));
         }
     }
 
@@ -447,6 +597,16 @@ var KineticScrolling = function ($, window, document) {
             target = target > max ? max : target < min ? min : target;
             amplitude = target - offset;
             timestamp = Date.now();
+
+
+// new version
+            curV = 0.8 * velocity / config.timeConstant;
+            g = 0.8 * velocity / (config.timeConstant * config.timeConstant);
+            curTarget = offset;
+            timeSinceLastCall = 0;
+            oldTime = timestamp;
+            oldOffset = 0;
+
             requestAnimationFrame(autoScroll);
 
         }

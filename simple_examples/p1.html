@@ -5,9 +5,14 @@
   <title>Kinetic Scrolling</title>
   <link rel="stylesheet" href="../css/pure-nr-min.css">
   <link rel="stylesheet" href="../css/style.css">
+  <!-- styles needed by jScrollPane -->
+  <link type="text/css" href="../css/jquery.jscrollpane.css" rel="stylesheet" media="all" />
+
+
 </head>
 <body>
   <div id="indicator"></div>
+  <div id="pointer"></div>
   <div class="pure-g" id="content">
     <div class="pure-u-1" id="view">
       <table class="pure-u-1 pure-table pure-table-striped pure-table-horizontal">
@@ -273,19 +278,26 @@
   <script>window.jQuery || document.write('<script src="../js/jquery-1.11.0.min.js" type="text/javascript"><\/script>')</script>
   <script src="../js/raf.js"></script>
   <script src="../js/scroll.js"></script>
+  <!-- the mousewheel plugin - optional to provide mousewheel support -->
+  <script type="text/javascript" src="../js/jquery.mousewheel.js"></script>
+  <!-- the jScrollPane script -->
+  <script type="text/javascript" src="../js/jquery.jscrollpane.min.js"></script>
   <script>
+  var api;
     $(document).ready(function () {
         var entries = document.querySelectorAll("tr");
         var doi = [
             // {"node": entries[20], "val": 30},
             {"node": entries[35], "val": 50},
-            {"node": entries[60], "val": 70},
-            {"node": entries[100], "val": 70},
+            {"node": entries[90], "val": 70},
+            // {"node": entries[100], "val": 70},
             {"node": entries[140], "val": 70},
             {"node": entries[180], "val": 90},
             // {"node": entries[250], "val": 70},
             {"node": entries[240], "val": 50}
         ];
+        // $("#content").jScrollPane();
+        // api = $("#content").data('jsp');
         KineticScrolling.init({
             "contentID": "view",
             "doi": doi
