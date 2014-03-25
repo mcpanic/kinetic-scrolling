@@ -1,19 +1,55 @@
 .peak-item {
-    width: 100%;
+    width: 50%;
+    margin-left: 200px;
     height: 45px;
     background-color: rgba(200, 0, 0, 0.5);
     position: absolute;
-    /*display: none;*/
+    z-index: 999;
+    display: none;
 }
 
-#pointer {
+div.kscroll-swinghead {
     width: 20px;
     height: 20px;
     top: 40%;
     background-color: rgba(0, 0, 200, 0.5);
     position: absolute;
     z-index: 1000;
-    display: none;
+    /*display: none;*/
+}
+
+div.kscroll-indicator {
+    position: absolute;
+    z-index: 1002;
+    top: 0px;
+    left: 3px;
+    width: 8px;
+    height: 20px;
+    background-color: #888;
+    border: none;
+    margin: 5px 0 5px 0;
+}
+
+svg, svg.kscroll-canvas {
+/*    width: 100%;
+    height: 100%;*/
+    /*z-index: 0;*/
+    pointer-events: none;
+}
+
+svg path.kscroll-swingarm-top, svg path.kscroll-swingarm-bottom {
+    /*position: absolute;*/
+    /*z-index: 1002;*/
+    /*top: 40%;*/
+    /*left: 0;*/
+    /*transform:rotate(-7deg);*/
+    /*-ms-transform:rotate(-7deg); */ /* IE 9 */
+    /*-webkit-transform:rotate(-7deg); */ /* Opera, Chrome, and Safari */
+/*    background-color: #888;*/
+    stroke-width: 5px;
+    stroke: teal;
+    opacity: 0.5;
+    z-index: 1000;
 }
 
 .peak-summary {
@@ -22,6 +58,7 @@
     z-index: 1001;
     width: 0;
     height: 0;
+    display: none;
 }
 
 aside {
@@ -54,24 +91,13 @@ aside {
 
 #view table td {
     line-height: 200%;
-    padding-left: 2em;
+    padding-left: 200px;
 }
 
 .large-text {
     font-size: 120%;
 }
 
-div#indicator {
-    position: absolute;
-    z-index: 1002;
-    top: 0px;
-    left: 3px;
-    width: 8px;
-    height: 20px;
-    background-color: #888;
-    border: none;
-    margin: 5px 0 5px 0;
-}
 
 div#overlay {
     position: absolute;

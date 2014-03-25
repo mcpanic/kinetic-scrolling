@@ -1,14 +1,20 @@
 
 var KineticScrolling = function ($, window, document) {
     "use strict";
-
+    var svgns = "http://www.w3.org/2000/svg";
     var config = {
         // the DOM ID for the content to apply kinetic scrolling to.
         // Simplest would be to apply to body, which applies to the whole page.
-        contentID: "view",
+        contentID: "kscroll-view",
 
         // the DOM ID for the indicator (scrollbar replacement)
-        indicatorID: "indicator",
+        indicatorID: "kscroll-indicator",
+
+        // the DOM ID for the swing head
+        swingheadID: "kscroll-swinghead",
+        swingCanvasID: "kscroll-canvas",
+        TopID: "kscroll-swingarmTop",
+        swingarmBottomID: "kscroll-swingarmBottom",
 
         // DOI definition as an array of objects
         // "node": HTMLElement object of the node representing this DOI
@@ -41,7 +47,20 @@ var KineticScrolling = function ($, window, document) {
         min, max, offset, reference, pressed, xform,
         velocity, frame, timestamp, ticker,
         amplitude, target;
+    var paper; // Raphael js
     var peakIncluded;
+    var armTopPath, armBottomPath;
+
+    function isElementInViewport (el) {
+        var rect = el.getBoundingClientRect();
+
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
+        );
+    }
 
     function init(configInput) {
         if (typeof configInput === "object") {
@@ -75,8 +94,24 @@ var KineticScrolling = function ($, window, document) {
         peakIncluded = false;
         // timeConstant = config.timeConstant;
 
+        $("<div/>")
+            .attr("id", config.indicatorID)
+            .addClass("kscroll-indicator")
+            .appendTo("body");
+        $("<div/>")
+            .attr("id", config.swingheadID)
+            .addClass("kscroll-swinghead")
+            .appendTo("body");
+        paper = Raphael(0, 0, "50%", "100%"); //Raphael("#view", "100%", "100%");
+        armTopPath = paper.path("M 0 0 L 0 0");
+        armBottomPath = paper.path("M 0 0 L 0 0");
+        armTopPath.node.setAttribute("class", "kscroll-swingarm-top");
+        armBottomPath.node.setAttribute("class", "kscroll-swingarm-bottom");
+
+        initSwingArms();
+
         // scrollbar showing on the left
-        indicator = document.getElementById('indicator');
+        indicator = document.getElementById(config.indicatorID);
         relative = (innerHeight - 30) / max;
 
         // setting up CSS transform for cross-browser support
@@ -91,6 +126,11 @@ var KineticScrolling = function ($, window, document) {
         });
 
         refresh();
+    }
+
+    function initSwingArms() {
+        armTopPath.attr("path", "M 0 0 L 0 0");
+        armBottomPath.attr("path", "M 0 0 L 0 0");
     }
 
     function bindEvents() {
@@ -121,7 +161,7 @@ var KineticScrolling = function ($, window, document) {
             config.doi[i]["id"] = "doi-" + i;
             config.doi[i]["y"] = node.offsetTop;
         }
-        config.doiSnappingPosition = 0; //screen.height / 2.5;
+        config.doiSnappingPosition = screen.height / 2.5;
         console.log(config.doi, config.doiSnappingPosition);
         // TODO sort based on offset?
     }
@@ -149,8 +189,10 @@ var KineticScrolling = function ($, window, document) {
         // offset = (y > max) ? max : (y < min) ? min : y;
 
         view.style[xform] = 'translateY(' + (-offset) + 'px)';
-        indicator.style[xform] = 'translateY(' + (offset * relative) + 'px)';
-        // api.scrollTo(0, offset);
+        if (typeof indicator !== "undefined" && indicator !== null)
+            indicator.style[xform] = 'translateY(' + (offset * relative) + 'px)';
+        else
+            console.log ("IND");
     }
 
     function track() {
@@ -295,8 +337,43 @@ var KineticScrolling = function ($, window, document) {
         return factor;
     }
 
+
+    // Render swing arms to an item.
+    function renderSwing(curPeak) {
+        if (typeof curPeak === "undefined")
+            return;
+        var node = curPeak["node"];
+
+        if (!isElementInViewport(node)) {
+            initSwingArms();
+            return;
+        }
+
+        var $swingHead = $(".kscroll-swinghead");
+        console.log($swingHead.position());
+        console.log("SWING", $(node).position().top, $(node).position().left);
+        var armTop = "M 10 " + ($swingHead.position().top + 10) + " L " + ($(node).position().left + 200) + " " + $(node).position().top;
+        var armBottom = "M 10 " + ($swingHead.position().top + 10) + " L " + ($(node).position().left + 200) + " " + ($(node).position().top + $(node).height());
+        console.log(armTop, armBottom);
+        // var line = paper.path( "M300,300 L30,100" );
+        armTopPath.attr("path", armTop);
+        armBottomPath.attr("path", armBottom);
+        // $(".kscroll-swingarm-top")
+        //     .attr("x1", 10)
+        //     .attr("y1", $swingHead.position().top + 10)
+        //     .attr("x2", $(node).position().left + 200)
+        //     .attr("y2", $(node).position().top);
+        // $(".kscroll-swingarm-bottom")
+        //     .attr("x1", 10)
+        //     .attr("y1", $swingHead.position().top + 10)
+        //     .attr("x2", $(node).position().left + 200)
+        //     .attr("y2", $(node).position().top + $(node).height());
+    }
+
+    // Check if the current offset is within a peak range.
     function isInPeak() {
         var hitPeak = false;
+        var curPeak;
         var i, point;
         for (i = 0; i < config.doi.length; i++) {
             // console.log(config.doi[i]);
@@ -307,14 +384,20 @@ var KineticScrolling = function ($, window, document) {
                 // duringPeak = true;
                 // console.log("getSlope", newTimeConstant);
                 hitPeak = true;
+                curPeak = config.doi[i];
                 break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
                 // duringPeak = true;
                 // console.log("getSlope", newTimeConstant);
                 hitPeak = true;
+                curPeak = config.doi[i];
                 break;
             }
         }
+        if (hitPeak)
+            renderSwing(curPeak);
+        else
+            initSwingArms();
         return hitPeak;
     }
 
@@ -357,12 +440,12 @@ var KineticScrolling = function ($, window, document) {
             accel = amplitude / (config.timeConstant * config.timeConstant) * Math.exp(-elapsed / config.timeConstant);
         }
         if (accel > 0 && oldOffset >= 0) {
-            console.log("forward");
+            // console.log("forward");
         } else if (accel < 0 && oldOffset <= 0) {
-            console.log("backward");
+            // console.log("backward");
             isForwardScrolling = false;
         } else {
-            console.log("IMPOSSIBLE");
+            console.log("ERROR: impossible scroll direction");
         }
         // console.log("AAA", accel, oldOffset);
         oldOffset = accel;
