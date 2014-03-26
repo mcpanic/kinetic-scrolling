@@ -452,13 +452,13 @@ var KineticScrolling = function ($, window, document) {
             // hill width: +/-config.doiRange
             if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeDragViewportFactor : config.slopeDragFactor;
-                console.log("UPHILL", sFactor);
+                // console.log("UPHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
                 hitPeak = true;
                 break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeDragViewportFactor : config.slopeDragFactor;
-                console.log("DOWNHILL", sFactor);
+                // console.log("DOWNHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
                 hitPeak = true;
                 break;
@@ -488,12 +488,12 @@ var KineticScrolling = function ($, window, document) {
             // hill width: +/-config.doiRange
             if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
-                console.log("UPHILL", sFactor);
+                // console.log("UPHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
                 break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
-                console.log("DOWNHILL", sFactor);
+                // console.log("DOWNHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
                 break;
             }
@@ -517,7 +517,7 @@ var KineticScrolling = function ($, window, document) {
                 max = peaks[i]["val"];
             }
         }
-        console.log("MAX", peaks.length, peaks, peaks[maxIndex]["node"]);
+        // console.log("MAX", peaks.length, peaks, peaks[maxIndex]["node"]);
         var node = peaks[maxIndex]["node"];
 
         if (!isElementInViewport(node)) {
@@ -591,7 +591,7 @@ var KineticScrolling = function ($, window, document) {
         } else if (!duringPeak && isInPeak()) {
             console.log("TRANSITION np -> p");
             duringPeak = true;
-            console.log(accel, curV);
+            // console.log(accel, curV);
             // undefined check: when a peak is applied to the top element in a page,
             // accel is not defined yet. In this case, use the initial curV.
             if (typeof accel !== "undefined") {
@@ -618,10 +618,10 @@ var KineticScrolling = function ($, window, document) {
             accel = decelFactor * amplitude / (config.timeConstant * config.timeConstant) * Math.exp(-elapsed / config.timeConstant);
         }
         if (accel > 0) { //  && oldOffset >= 0
-            console.log("forward");
+            // console.log("forward");
             isForwardScrolling = true;
         } else if (accel < 0) { //  && oldOffset <= 0
-            console.log("backward");
+            // console.log("backward");
             isForwardScrolling = false;
         } else if (accel == 0) {
             // console.log("Accel 0, slow down");
@@ -800,7 +800,6 @@ var KineticScrolling = function ($, window, document) {
         timestamp = now;
         delta = offset - frame;
         frame = offset;
-        // console.log("DELTA", delta);
         v = 1000 * delta / (1 + elapsed);
         velocity = 0.8 * v + 0.2 * velocity;
         isInPeak();
@@ -832,9 +831,9 @@ var KineticScrolling = function ($, window, document) {
     function drag(e) {
         var y, delta;
         if (pressed) {
+            // console.log("DRAG");
             y = ypos(e);
             // delta = reference - y;
-            console.log("DRAG", getCosTheta());
             delta = (reference - y) * getCosTheta();
             if (delta > 2 || delta < -2) {
                 reference = y;
