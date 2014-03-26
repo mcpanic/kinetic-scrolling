@@ -38,6 +38,12 @@ margin: 0px;
 font-weight: bold;
 }
 
+.picker-content, .story-cover-content {
+	position: absolute;
+	top:0px;
+	left:10%;
+}
+
 .link {
 color: inherit;
 text-decoration: none;
@@ -61,10 +67,10 @@ letter-spacing: -0.36000001430511475px;
 line-height: 25px;
 overflow-x: hidden;
 overflow-y: hidden;
-position: relative;
 visibility: visible;
-width: 1288px;
-top: 250px;
+position: absolute;
+left:0px;
+width: 100%px;
 }
 .post-page-wrapper, .post-page-wrapper-inner {
 position: relative;
@@ -146,7 +152,7 @@ position: absolute;
 left: 0;
 right: 0;
 bottom: 50px;
-padding-top: 100px;
+padding-top: 200px;
 padding-bottom: 20px;
 color: #fff;
 }
@@ -164,7 +170,7 @@ color: rgba(255,255,255,0.65);
 
 .notes-markers {
 	position: absolute;
-	left: 85%;
+	left: 95%;
 	top: 0px;
 	width: 30px;
 	margin: 0px;

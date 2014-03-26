@@ -6,8 +6,9 @@ $(window).resize(function(){
  });
  
  var height = $('.container').height();
- $('.post-page-wrapper').css('top', height);
- $('.notes-markers').css('top', height-200);
+ $('.post-page-wrapper').css('top', height-450);
+ //$('.picker-content').css('top', height-100);
+ 
 });
 
 
@@ -18,6 +19,7 @@ $(window).load(function(){
  });
  
  var height = $('.container').height();
- $('.post-page-wrapper').css('top', height);
- $('.notes-markers').css('top', height-200);
+ console.log(height);
+ $('.post-page-wrapper').css('top', height-450);
+ //$('.picker-content').css('top', height-100);
 });
