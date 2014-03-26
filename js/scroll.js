@@ -803,6 +803,7 @@ var KineticScrolling = function ($, window, document) {
         // console.log("DELTA", delta);
         v = 1000 * delta / (1 + elapsed);
         velocity = 0.8 * v + 0.2 * velocity;
+        isInPeak();
     }
 
     function tap(e) {
