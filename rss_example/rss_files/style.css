@@ -1,0 +1,77 @@
+.u4Entry{
+	padding: 0px;
+	width: 100%;
+	border: 0px solid 00000;
+	margin-bottom: 20px;
+	margin-top: 20px;
+	min-height: 104px;
+}
+
+.visual {
+	height: 104px;
+	width: 204px;
+	border: 0px;
+	overflow: hidden;
+	border: 1px solid #DFDFDF;
+	border-radius: 3px;
+	-webkit-background-size: cover;
+	background-size: cover;
+	background-position: 50% 30%;
+	transition: opacity 0.35s linear;
+	-webkit-transition: opacity 0.35s linear;
+	-moz-transition: opacity 0.35s linear;
+	opacity: 0;
+	transition-delay: 0.2s;
+	-webkit-transform: translate3d(0,0,0);
+	float: left;
+	margin-right: 20px;
+}
+
+.metadata {
+color: #B3B3B2;
+font-size: 12px;
+line-height: 17px;
+}
+.nbrRecommendations {
+	color: #000000;
+	font-size: 15px;
+}
+
+BODY {
+font-size: 12px;
+font-family: sans-serif;
+}
+
+.u4Entry .title {
+display: block;
+font-size: 14px;
+line-height: 17px;
+font-weight: 700;
+font-family: sans-serif;
+text-rendering: optimizeLegibility;
+}
+
+.summary {
+font-size: 12px;
+line-height: 16px;
+color: #808080;
+}
+
+a {
+color: #494949;
+text-decoration: none;
+}
+
+.metadata {
+color: #B3B3B2;
+font-size: 12px;
+line-height: 17px;
+overflow: hidden;
+}
+
+
+
+#feedlyPage {  
+	margin: 0 auto;
+	width: 60%;
+}
