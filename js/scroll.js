@@ -54,6 +54,14 @@ var KineticScrolling = function ($, window, document) {
         // Set to something higher than slopeFactor to further delerate.
         slopeViewportFactor: 10000000,
 
+        // How steep the peak slope should be when dragging.
+        // Higher value means the scrolling decelerates more.
+        slopeDragFactor: 1,
+
+        // How steep the peak slope should be when dragging, when the target is within the viewport.
+        // Set to something higher than slopeFactor to further delerate.
+        slopeDragViewportFactor: 10,
+
         // show swing visualization for peak items
         isSwingShown: true,
 
@@ -305,7 +313,7 @@ var KineticScrolling = function ($, window, document) {
                     .css("left", box.left + "px")
                     .css("width", (box.right - box.left) + "px")
                     .css("height", (box.bottom - box.top) + "px")
-                    .css("opacity", Math.max(50, config.doi[i]["val"])/100)
+                    .css("opacity", Math.max(30, config.doi[i]["val"])/100)
                     .appendTo(view);
             }
 
@@ -431,6 +439,40 @@ var KineticScrolling = function ($, window, document) {
     }
 */
 
+    function getCosTheta() {
+        var i;
+        var point;
+        var hitPeak = false;
+        var a, factor = 0;
+        var sFactor;
+        for (i = 0; i < config.doi.length; i++) {
+            // console.log(config.doi[i]);
+            point = config.doi[i]["y"];
+            // current offset is within the range of a hill caused by this doi
+            // hill width: +/-config.doiRange
+            if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
+                sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeDragViewportFactor : config.slopeDragFactor;
+                console.log("UPHILL", sFactor);
+                a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
+                hitPeak = true;
+                break;
+            } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
+                sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeDragViewportFactor : config.slopeDragFactor;
+                console.log("DOWNHILL", sFactor);
+                a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
+                hitPeak = true;
+                break;
+            }
+        }
+        if (hitPeak)
+            factor = Math.abs(1 / Math.sqrt(a * a + 1));
+        else
+            factor = 1;
+        // console.log(a, factor);
+        return factor;
+    }
+
+
     // Compute the current decelration force applied
     function getSinTheta() {
         var i;
@@ -463,10 +505,20 @@ var KineticScrolling = function ($, window, document) {
 
 
     // Render swing arms to an item.
-    function renderSwing(curPeak) {
-        if (typeof curPeak === "undefined")
+    function renderSwing(peaks) {
+        if (peaks.length == 0)
             return;
-        var node = curPeak["node"];
+        var i;
+        var maxIndex = -1;
+        var max = -1;
+        for (i = 0; i < peaks.length; i++) {
+            if (peaks[i]["val"] > max) {
+                maxIndex = i;
+                max = peaks[i]["val"];
+            }
+        }
+        console.log("MAX", peaks.length, peaks, peaks[maxIndex]["node"]);
+        var node = peaks[maxIndex]["node"];
 
         if (!isElementInViewport(node)) {
             initSwingArms();
@@ -486,6 +538,7 @@ var KineticScrolling = function ($, window, document) {
     // Check if the current offset is within a peak range.
     function isInPeak() {
         var hitPeak = false;
+        var peaksInRange = [];
         var curPeak;
         var i, point;
         for (i = 0; i < config.doi.length; i++) {
@@ -497,18 +550,20 @@ var KineticScrolling = function ($, window, document) {
                 // duringPeak = true;
                 // console.log("getSlope", newTimeConstant);
                 hitPeak = true;
+                peaksInRange.push(config.doi[i]);
                 curPeak = config.doi[i];
-                break;
+                // break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
                 // duringPeak = true;
                 // console.log("getSlope", newTimeConstant);
                 hitPeak = true;
+                peaksInRange.push(config.doi[i]);
                 curPeak = config.doi[i];
-                break;
+                // break;
             }
         }
         if (hitPeak && config.isSwingShown)
-            renderSwing(curPeak);
+            renderSwing(peaksInRange);
         else if (config.isSwingShown)
             initSwingArms();
         return hitPeak;
@@ -777,7 +832,9 @@ var KineticScrolling = function ($, window, document) {
         var y, delta;
         if (pressed) {
             y = ypos(e);
-            delta = reference - y;
+            // delta = reference - y;
+            console.log("DRAG", getCosTheta());
+            delta = (reference - y) * getCosTheta();
             if (delta > 2 || delta < -2) {
                 reference = y;
                 scroll(offset + delta);
