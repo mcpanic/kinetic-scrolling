@@ -40,17 +40,46 @@ var KineticScrolling = function ($, window, document) {
 
         // When constructing a hill around a doi, how wide should it be? (in pixels)
         // doiRange * 2 is the full range (uphill + downhill)
-        doiRange: 500
+        doiRange: 500,
+
+        // How stiff the friction should be.
+        // This determines the initial velocity in release.
+        frictionFactor: 0.8,
+
+        // How steep the peak slope should be.
+        // Higher value means the scrolling decelerates more.
+        slopeFactor: 10000,
+
+        // How steep the peak slope should be, when the target is within the viewport.
+        // Set to something higher than slopeFactor to further delerate.
+        slopeViewportFactor: 10000000,
+
+        // show swing visualization for peak items
+        isSwingShown: true,
+
+        // highlight peak items
+        isPeakItemShown: true,
+
+        // show peak summary visualization on the scroll bar
+        isSummaryShown: true
     };
+
+    var duringPeak = false;
 
     var view, indicator, relative,
         min, max, offset, reference, pressed, xform,
         velocity, frame, timestamp, ticker,
         amplitude, target;
     var paper; // Raphael js
-    var peakIncluded;
     var armTopPath, armBottomPath;
+    // var peakIncluded;
 
+
+
+    function gup(name) {
+        var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+        return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+    }
 
     // is the current element in the view port?
     function isElementInViewport (el) {
@@ -88,6 +117,23 @@ var KineticScrolling = function ($, window, document) {
         }
     }
 
+    var isMobile = {
+        Android: function() {
+            return navigator.userAgent.match(/Android/i) ? true : false;
+        },
+        BlackBerry: function() {
+            return navigator.userAgent.match(/BlackBerry/i) ? true : false;
+        },
+        iOS: function() {
+            return navigator.userAgent.match(/iPhone|iPad|iPod/i) ? true : false;
+        },
+        Windows: function() {
+            return navigator.userAgent.match(/IEMobile/i) ? true : false;
+        },
+        any: function() {
+            return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Windows());
+        }
+    };
 
     function init(configInput) {
         if (typeof configInput === "object") {
@@ -111,6 +157,24 @@ var KineticScrolling = function ($, window, document) {
             return;
         }
 
+        // Parse URL parameters
+
+        var isPeakItemShown = gup("peak");
+        config.isPeakItemShown = isPeakItemShown == 1 ? true : (isPeakItemShown == 0) ? false : config.isPeakItemShown;
+        var isSwingShown = gup("swing");
+        config.isSwingShown = isSwingShown == 1 ? true : (isSwingShown == 0) ? false : config.isSwingShown;
+        var isSummaryShown = gup("summary");
+        config.isSummaryShown = isSummaryShown == 1 ? true : (isSummaryShown == 0) ? false : config.isSummaryShown;
+
+        // Custom settings for different devices
+        if (isMobile.Android()) {
+            config.slopeFactor = 100;
+            config.slopeViewportFactor = 100000;
+        } else if (isMobile.iOS()) {
+            config.slopeFactor = 10000;
+            config.slopeViewportFactor = 10000000;
+        }
+
         normalizeDOI();
 
         // register all event handlers that hijack the default mouse/touch events
@@ -120,28 +184,29 @@ var KineticScrolling = function ($, window, document) {
         max = parseInt(getComputedStyle(view).height, 10) - innerHeight;
         offset = min = 0;
         pressed = false;
-        peakIncluded = false;
-        // timeConstant = config.timeConstant;
+        // peakIncluded = false;
 
         $("<div/>")
             .attr("id", config.indicatorID)
             .addClass("kscroll-indicator")
             .appendTo("body");
-        $("<div/>")
-            .attr("id", config.swingheadID)
-            .addClass("kscroll-swinghead")
-            .appendTo("body");
-        paper = Raphael(0, 0, "50%", "100%"); //Raphael("#view", "100%", "100%");
-        armTopPath = paper.path("M 0 0 L 0 0");
-        armBottomPath = paper.path("M 0 0 L 0 0");
-        armTopPath.node.setAttribute("class", "kscroll-swingarm-top");
-        armBottomPath.node.setAttribute("class", "kscroll-swingarm-bottom");
-
-        initSwingArms();
 
         // scrollbar showing on the left
         indicator = document.getElementById(config.indicatorID);
         relative = (innerHeight - 30) / max;
+
+        if (config.isSwingShown) {
+            $("<div/>")
+                .attr("id", config.swingheadID)
+                .addClass("kscroll-swinghead")
+                .appendTo("body");
+            paper = Raphael(0, 0, "50%", "100%"); //Raphael("#view", "100%", "100%");
+            armTopPath = paper.path("M 0 0 L 0 0");
+            armBottomPath = paper.path("M 0 0 L 0 0");
+            armTopPath.node.setAttribute("class", "kscroll-swingarm-top");
+            armBottomPath.node.setAttribute("class", "kscroll-swingarm-bottom");
+            initSwingArms();
+        }
 
         // setting up CSS transform for cross-browser support
         xform = 'transform';
@@ -176,7 +241,7 @@ var KineticScrolling = function ($, window, document) {
     // The page layout has changed, so refresh the data to reflect the updated layout.
     function refresh() {
         mapDOMtoPosition();
-        resetDirty();
+        // resetDirty();
         markPeaks();
     }
 
@@ -194,7 +259,7 @@ var KineticScrolling = function ($, window, document) {
         console.log(config.doi, config.doiSnappingPosition);
         // TODO sort based on offset?
     }
-
+/*
     function resetDirty() {
         var i;
         var node;
@@ -202,48 +267,71 @@ var KineticScrolling = function ($, window, document) {
             config.doi[i]["dirty"] = false;
         }
     }
+*/
 
-    function ypos(e) {
-        // touch event
-        if (e.targetTouches && (e.targetTouches.length >= 1)) {
-            return e.targetTouches[0].clientY;
+
+    function getPeaksInRange(n1, n2) {
+        var smaller = n1 < n2 ? n1 : n2;
+        var larger = n1 >= n2 ? n1 : n2;
+        var peaks = [];
+        var i;
+        var point;
+        for (i = 0; i < config.doi.length; i++) {
+            // console.log(config.doi[i]);
+            point = config.doi[i]["y"] - config.doiSnappingPosition;
+            if (smaller <= point && point <= larger) {
+                peaks.push(config.doi[i]);
+                // direction-aware. when swiping up, get the last one.
+                // if (n1 < n2) {
+                //     break;
+                // }
+            }
         }
-        // mouse event
-        return e.clientY;
+        // console.log(smaller, larger, peaks);
+        return {"peaks": peaks, "isReversed": (n1 > n2)};
     }
 
-    function scroll(y) {
-        // remove the edge restrictions from the scroll
-        offset = y;
-        // offset = (y > max) ? max : (y < min) ? min : y;
+    function markPeaks() {
+        var i, node, box;
+        for (i = 0; i < config.doi.length; i++) {
+            node = config.doi[i]["node"];
+            box = node.getBoundingClientRect();
+            // console.log(box.left, box.right, box.top, box.bottom);
+            if (config.isPeakItemShown) {
+                $("<div/>")
+                    .addClass("peak-item")
+                    .attr("id", config.doi[i]["id"] + "-peak-item")
+                    .css("top", box.top + "px")
+                    .css("left", box.left + "px")
+                    .css("width", (box.right - box.left) + "px")
+                    .css("height", (box.bottom - box.top) + "px")
+                    .css("opacity", Math.max(50, config.doi[i]["val"])/100)
+                    .appendTo(view);
+            }
 
-        view.style[xform] = 'translateY(' + (-offset) + 'px)';
-        if (typeof indicator !== "undefined" && indicator !== null)
-            indicator.style[xform] = 'translateY(' + (offset * relative) + 'px)';
-        else
-            console.log ("IND");
+            if (config.isSummaryShown) {
+                var relHeight = (config.doiRange * 2 * 100 / $("#" + config.contentID).height());
+                var relTop = (config.doi[i]["y"]*100 / $("#" + config.contentID).height());
+                $("<div/>")
+                    .addClass("peak-summary")
+                    .attr("id", config.doi[i]["id"] + "-peak-summary")
+                    .css("top", (relTop - relHeight / 2) + "%")
+                    .css("left", 0)
+                    .css("border-top", (relHeight / 2 / 100 * window.screen.height) + "px solid transparent")
+                    .css("border-bottom", (relHeight / 2 / 100 * window.screen.height) + "px solid transparent")
+                    .css("border-left", config.doi[i]["val"] / 2 + "px solid rgba(0, 200, 0, 0.5)")
+                    // .css("width", (config.doi[i]["val"] / 2) + "px")
+                    // .css("height", relHeight + "%")
+                    .appendTo($("body"));
+            }
+        }
     }
 
-    function track() {
-        var now, elapsed, delta, v;
-
-        now = Date.now();
-        elapsed = now - timestamp;
-        timestamp = now;
-        delta = offset - frame;
-        frame = offset;
-
-        v = 1000 * delta / (1 + elapsed);
-        velocity = 0.8 * v + 0.2 * velocity;
-    }
-
-    var penaltyCount = 0;
-    var recentDelta;
-    var timeFreezeElapsed = 0;
-    var timeFreeze = 0;
-    var isTimeUpdated = true;
-
-    var duringPeak = false;
+    // var penaltyCount = 0;
+    // var recentDelta;
+    // var timeFreezeElapsed = 0;
+    // var timeFreeze = 0;
+    // var isTimeUpdated = true;
 
 /* NOT USED
     var peakFreeze = 0;
@@ -344,8 +432,6 @@ var KineticScrolling = function ($, window, document) {
 */
 
     // Compute the current decelration force applied
-    var slopeFactor = 1;
-    var slopeViewportFactor = 10000;
     function getSinTheta() {
         var i;
         var point;
@@ -359,12 +445,12 @@ var KineticScrolling = function ($, window, document) {
             // current offset is within the range of a hill caused by this doi
             // hill width: +/-config.doiRange
             if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
-                sFactor = isElementInViewport(config.doi[i]["node"]) ? slopeViewportFactor : slopeFactor;
+                sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
                 console.log("UPHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
                 break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
-                sFactor = isElementInViewport(config.doi[i]["node"]) ? slopeViewportFactor : slopeFactor;
+                sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
                 console.log("DOWNHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
                 break;
@@ -390,8 +476,8 @@ var KineticScrolling = function ($, window, document) {
         var $swingHead = $(".kscroll-swinghead");
         // console.log($swingHead.position());
         // console.log("SWING", $(node).position().top, $(node).position().left);
-        var armTop = "M 10 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + $(node).position().top;
-        var armBottom = "M 10 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + ($(node).position().top + $(node).height());
+        var armTop = "M 0 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + $(node).position().top;
+        var armBottom = "M 0 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + ($(node).position().top + $(node).height());
         // console.log(armTop, armBottom);
         armTopPath.attr("path", armTop);
         armBottomPath.attr("path", armBottom);
@@ -421,9 +507,9 @@ var KineticScrolling = function ($, window, document) {
                 break;
             }
         }
-        if (hitPeak)
+        if (hitPeak && config.isSwingShown)
             renderSwing(curPeak);
-        else
+        else if (config.isSwingShown)
             initSwingArms();
         return hitPeak;
     }
@@ -469,27 +555,39 @@ var KineticScrolling = function ($, window, document) {
         if (duringPeak) {
             accel = g * getSinTheta();
         } else {
-            accel = amplitude / (config.timeConstant * config.timeConstant) * Math.exp(-elapsed / config.timeConstant);
+            // Add 1.1 to make it a bit stiffer.
+            // Also, there was a bug that slides at a slow speed without slowing down.
+            var decelFactor = 1.05;
+            if (isMobile.Android())
+                decelFactor = 1.15;
+            accel = decelFactor * amplitude / (config.timeConstant * config.timeConstant) * Math.exp(-elapsed / config.timeConstant);
         }
-        if (accel > 0 && oldOffset >= 0) {
-            // console.log("forward");
-        } else if (accel < 0 && oldOffset <= 0) {
-            // console.log("backward");
+        if (accel > 0) { //  && oldOffset >= 0
+            console.log("forward");
+            isForwardScrolling = true;
+        } else if (accel < 0) { //  && oldOffset <= 0
+            console.log("backward");
             isForwardScrolling = false;
+        } else if (accel == 0) {
+            // console.log("Accel 0, slow down");
         } else {
-            console.log("ERROR: impossible scroll direction", accel, g, oldOffset);
+            console.log("ERROR: impossible scroll direction", isForwardScrolling, duringPeak, elapsed, timeSinceLastCall, accel, g, oldOffset);
         }
         // console.log("AAA", accel, oldOffset);
-        oldOffset = accel;
+        // oldOffset = accel;
         curV = curV - accel * timeSinceLastCall;
-        console.log(timeSinceLastCall, curV * timeSinceLastCall);
+        // console.log(timeSinceLastCall, curV * timeSinceLastCall);
         // at least one pixel to move should be available.
         if ((isForwardScrolling && curV * timeSinceLastCall >= 1) ||
             (!isForwardScrolling && curV * timeSinceLastCall <= -1)){
             curTarget = curTarget + curV * timeSinceLastCall;
             curTarget = (curTarget > max) ? max : (curTarget < min) ? min : curTarget;
             scroll(curTarget);
-            requestAnimationFrame(autoScroll);
+            if (!pressed) {
+                requestAnimationFrame(autoScroll);
+            } else {
+                console.log("STOP REQUESTING"); // because there's a continuous tapping
+            }
         } else {
             curTarget = (curTarget > max) ? max : (curTarget < min) ? min : curTarget;
             scroll(curTarget);
@@ -499,7 +597,7 @@ var KineticScrolling = function ($, window, document) {
     }
 
 
-
+/*
     var storedOffset;
     var interval=0;
     function autoScroll_quadratic() {
@@ -615,24 +713,60 @@ var KineticScrolling = function ($, window, document) {
             }
         }
     }
+*/
+
+
+    function ypos(e) {
+        // touch event
+        if (e.targetTouches && (e.targetTouches.length >= 1)) {
+            return e.targetTouches[0].clientY;
+        }
+        // mouse event
+        return e.clientY;
+    }
+
+    function scroll(y) {
+        // remove the edge restrictions from the scroll
+        offset = y;
+        // offset = (y > max) ? max : (y < min) ? min : y;
+
+        view.style[xform] = 'translateY(' + (-offset) + 'px)';
+        if (typeof indicator !== "undefined" && indicator !== null)
+            indicator.style[xform] = 'translateY(' + (offset * relative) + 'px)';
+        else
+            console.log ("Error: indicator not created.");
+    }
+
+    function track() {
+        var now, elapsed, delta, v;
+
+        now = Date.now();
+        elapsed = now - timestamp;
+        timestamp = now;
+        delta = offset - frame;
+        frame = offset;
+        // console.log("DELTA", delta);
+        v = 1000 * delta / (1 + elapsed);
+        velocity = 0.8 * v + 0.2 * velocity;
+    }
 
     function tap(e) {
         // custom flag reset
-        resetDirty();
-        timeFreezeElapsed = 0;
-        timeFreezeElapsed = 0;
-        timeFreeze = 0;
-        isTimeUpdated = true;
+        // resetDirty();
+        // timeFreezeElapsed = 0;
+        // timeFreeze = 0;
+        // isTimeUpdated = true;
+        console.log("TAP");
 
         pressed = true;
-        peakIncluded = false;
+        // peakIncluded = false;
         reference = ypos(e);
 
         velocity = amplitude = 0;
         frame = offset;
         timestamp = Date.now();
         clearInterval(ticker);
-        ticker = setInterval(track, 25); // used to be 100
+        ticker = setInterval(track, 50); // used to be 100
 
         e.preventDefault();
         e.stopPropagation();
@@ -654,81 +788,28 @@ var KineticScrolling = function ($, window, document) {
         return false;
     }
 
-
-    function getPeaksInRange(n1, n2) {
-        var smaller = n1 < n2 ? n1 : n2;
-        var larger = n1 >= n2 ? n1 : n2;
-        var peaks = [];
-        var i;
-        var point;
-        for (i = 0; i < config.doi.length; i++) {
-            // console.log(config.doi[i]);
-            point = config.doi[i]["y"] - config.doiSnappingPosition;
-            if (smaller <= point && point <= larger) {
-                peaks.push(config.doi[i]);
-                // direction-aware. when swiping up, get the last one.
-                // if (n1 < n2) {
-                //     break;
-                // }
-            }
-        }
-        // console.log(smaller, larger, peaks);
-        return {"peaks": peaks, "isReversed": (n1 > n2)};
-    }
-
-    function markPeaks() {
-        var i, node, box;
-        for (i = 0; i < config.doi.length; i++) {
-            node = config.doi[i]["node"];
-            box = node.getBoundingClientRect();
-            console.log(box.left, box.right, box.top, box.bottom);
-            $("<div/>")
-                .addClass("peak-item")
-                .attr("id", config.doi[i]["id"] + "-peak-item")
-                .css("top", box.top + "px")
-                .css("left", box.left + "px")
-                .css("width", (box.right - box.left) + "px")
-                .css("height", (box.bottom - box.top) + "px")
-                .css("opacity", config.doi[i]["val"]/100)
-                .appendTo(view);
-            var relHeight = (config.doiRange * 2 * 100 / $("#" + config.contentID).height());
-            var relTop = (config.doi[i]["y"]*100 / $("#" + config.contentID).height());
-            $("<div/>")
-                .addClass("peak-summary")
-                .attr("id", config.doi[i]["id"] + "-peak-summary")
-                .css("top", (relTop - relHeight / 2) + "%")
-                .css("left", 0)
-                .css("border-top", (relHeight / 2 / 100 * window.screen.height) + "px solid transparent")
-                .css("border-bottom", (relHeight / 2 / 100 * window.screen.height) + "px solid transparent")
-                .css("border-left", config.doi[i]["val"] / 2 + "px solid rgba(0, 200, 0, 0.5)")
-                // .css("width", (config.doi[i]["val"] / 2) + "px")
-                // .css("height", relHeight + "%")
-                .appendTo($("body"));
-        }
-    }
-
     function release(e) {
         pressed = false;
 
         clearInterval(ticker);
         if (velocity > 10 || velocity < -10) {
-            // amplitude = 0.8 * velocity;
+            // console.log("RELEASE");
+            // amplitude = config.frictionFactor * velocity;
             // target = offset + amplitude;
-            target = Math.round(offset + (0.8 * velocity));
+            target = Math.round(offset + (config.frictionFactor * velocity));
 
             target = target > max ? max : target < min ? min : target;
             amplitude = target - offset;
             timestamp = Date.now();
 
-
-// new version
-            curV = 0.8 * velocity / config.timeConstant;
-            g = 0.8 * velocity / (config.timeConstant * config.timeConstant);
+            // new version
+            curV = config.frictionFactor * velocity / config.timeConstant;
+            g = config.frictionFactor * velocity / (config.timeConstant * config.timeConstant);
             curTarget = offset;
             timeSinceLastCall = 0;
             oldTime = timestamp;
             oldOffset = 0;
-
+            console.log("RELEASE WITH", target, offset, curV, g);
             requestAnimationFrame(autoScroll);
 
         }

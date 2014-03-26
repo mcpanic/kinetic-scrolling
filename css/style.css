@@ -14,7 +14,8 @@ div.kscroll-swinghead {
     height: 20px;
     left: 0;
     top: 40%;
-    background-color: rgba(0, 0, 200, 0.5);
+    /*background-color: rgba(0, 0, 200, 0.5);*/
+    background-color: transparent;
     position: absolute;
     z-index: 1000;
 }
@@ -59,6 +60,6 @@ svg path.kscroll-swingarm-top, svg path.kscroll-swingarm-bottom {
     z-index: 1001;
     width: 0;
     height: 0;
-    display: none;
+    /*display: none;*/
 }
 
