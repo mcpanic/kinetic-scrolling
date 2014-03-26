@@ -51,6 +51,8 @@ var KineticScrolling = function ($, window, document) {
     var peakIncluded;
     var armTopPath, armBottomPath;
 
+
+    // is the current element in the view port?
     function isElementInViewport (el) {
         var rect = el.getBoundingClientRect();
 
@@ -61,6 +63,31 @@ var KineticScrolling = function ($, window, document) {
             rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
         );
     }
+
+    // Normalize all DOI values between normMin and normMax.
+    function normalizeDOI () {
+        var normMax = 100;
+        var normMin = 10;
+        var min, max, i, m, d;
+        var valArray = [];
+        for (i = 0; i < config.doi.length; i++) {
+            valArray.push(config.doi[i]["val"]);
+        }
+        min = Math.min.apply(Math, valArray);
+        max = Math.max.apply(Math, valArray);
+        if (max === min) {
+            for (i = 0; i < config.doi.length; i++) {
+                config.doi[i]["val"] = normMax;
+            }
+        } else {
+            m = (normMax - normMin) / (max - min);
+            d = normMax - (m * max);
+            for (i = 0; i < config.doi.length; i++) {
+                config.doi[i]["val"] = m * config.doi[i]["val"] + d;
+            }
+        }
+    }
+
 
     function init(configInput) {
         if (typeof configInput === "object") {
@@ -83,6 +110,8 @@ var KineticScrolling = function ($, window, document) {
             console.log("Error: Invalid content ID provided.");
             return;
         }
+
+        normalizeDOI();
 
         // register all event handlers that hijack the default mouse/touch events
         bindEvents();
@@ -215,6 +244,8 @@ var KineticScrolling = function ($, window, document) {
     var isTimeUpdated = true;
 
     var duringPeak = false;
+
+/* NOT USED
     var peakFreeze = 0;
     // based on the current mouse position,
     // return a time constant penalized by the slope
@@ -310,30 +341,37 @@ var KineticScrolling = function ($, window, document) {
         }
         return newAmplitude;
     }
+*/
 
+    // Compute the current decelration force applied
+    var slopeFactor = 1;
+    var slopeViewportFactor = 10000;
     function getSinTheta() {
         var i;
         var point;
         var hitPeak = false;
         // var newAmplitude = amplitude;
         var a, factor = 0;
+        var sFactor;
         for (i = 0; i < config.doi.length; i++) {
             // console.log(config.doi[i]);
             point = config.doi[i]["y"];
             // current offset is within the range of a hill caused by this doi
             // hill width: +/-config.doiRange
             if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
-                console.log("UPHILL");
-                a = 2 * config.doi[i]["val"] * 10000 / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
+                sFactor = isElementInViewport(config.doi[i]["node"]) ? slopeViewportFactor : slopeFactor;
+                console.log("UPHILL", sFactor);
+                a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
                 break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
-                console.log("DOWNHILL");
-                a = 2 * config.doi[i]["val"] * 10000 / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
+                sFactor = isElementInViewport(config.doi[i]["node"]) ? slopeViewportFactor : slopeFactor;
+                console.log("DOWNHILL", sFactor);
+                a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
                 break;
             }
         }
         factor = Math.abs(a / Math.sqrt(a * a + 1));
-        console.log(a, factor);
+        // console.log(a, factor);
         return factor;
     }
 
@@ -350,24 +388,13 @@ var KineticScrolling = function ($, window, document) {
         }
 
         var $swingHead = $(".kscroll-swinghead");
-        console.log($swingHead.position());
-        console.log("SWING", $(node).position().top, $(node).position().left);
-        var armTop = "M 10 " + ($swingHead.position().top + 10) + " L " + ($(node).position().left + 200) + " " + $(node).position().top;
-        var armBottom = "M 10 " + ($swingHead.position().top + 10) + " L " + ($(node).position().left + 200) + " " + ($(node).position().top + $(node).height());
-        console.log(armTop, armBottom);
-        // var line = paper.path( "M300,300 L30,100" );
+        // console.log($swingHead.position());
+        // console.log("SWING", $(node).position().top, $(node).position().left);
+        var armTop = "M 10 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + $(node).position().top;
+        var armBottom = "M 10 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + ($(node).position().top + $(node).height());
+        // console.log(armTop, armBottom);
         armTopPath.attr("path", armTop);
         armBottomPath.attr("path", armBottom);
-        // $(".kscroll-swingarm-top")
-        //     .attr("x1", 10)
-        //     .attr("y1", $swingHead.position().top + 10)
-        //     .attr("x2", $(node).position().left + 200)
-        //     .attr("y2", $(node).position().top);
-        // $(".kscroll-swingarm-bottom")
-        //     .attr("x1", 10)
-        //     .attr("y1", $swingHead.position().top + 10)
-        //     .attr("x2", $(node).position().left + 200)
-        //     .attr("y2", $(node).position().top + $(node).height());
     }
 
     // Check if the current offset is within a peak range.
@@ -423,17 +450,22 @@ var KineticScrolling = function ($, window, document) {
         } else if (!duringPeak && isInPeak()) {
             console.log("TRANSITION np -> p");
             duringPeak = true;
-            curV = accel * config.timeConstant;
-            g = curV / config.timeConstant;
-            // console.log(curV, g);
-            timestamp = now;
+            console.log(accel, curV);
+            // undefined check: when a peak is applied to the top element in a page,
+            // accel is not defined yet. In this case, use the initial curV.
+            if (typeof accel !== "undefined") {
+                curV = accel * config.timeConstant;
+                g = curV / config.timeConstant;
+                timestamp = now;
+            } else {
+                g = curV / config.timeConstant;
+            }
         }
 
         timeSinceLastCall = now - oldTime; // total time since last autoScroll call
         oldTime = now;
         elapsed = now - timestamp; // total time since last transition
-
-        // console.log("  TIME", timeSinceLastCall);
+        // console.log("timeSince", timeSinceLastCall, "elapsed", elapsed);
         if (duringPeak) {
             accel = g * getSinTheta();
         } else {
@@ -445,12 +477,12 @@ var KineticScrolling = function ($, window, document) {
             // console.log("backward");
             isForwardScrolling = false;
         } else {
-            console.log("ERROR: impossible scroll direction");
+            console.log("ERROR: impossible scroll direction", accel, g, oldOffset);
         }
         // console.log("AAA", accel, oldOffset);
         oldOffset = accel;
         curV = curV - accel * timeSinceLastCall;
-        // console.log(timeSinceLastCall, curV * timeSinceLastCall);
+        console.log(timeSinceLastCall, curV * timeSinceLastCall);
         // at least one pixel to move should be available.
         if ((isForwardScrolling && curV * timeSinceLastCall >= 1) ||
             (!isForwardScrolling && curV * timeSinceLastCall <= -1)){
@@ -461,7 +493,7 @@ var KineticScrolling = function ($, window, document) {
         } else {
             curTarget = (curTarget > max) ? max : (curTarget < min) ? min : curTarget;
             scroll(curTarget);
-            console.log("HERE", offset)
+            console.log("STOPPED SCROLLING AT", offset)
         }
         return;
     }
@@ -645,12 +677,19 @@ var KineticScrolling = function ($, window, document) {
     }
 
     function markPeaks() {
-        var i;
+        var i, node, box;
         for (i = 0; i < config.doi.length; i++) {
+            node = config.doi[i]["node"];
+            box = node.getBoundingClientRect();
+            console.log(box.left, box.right, box.top, box.bottom);
             $("<div/>")
                 .addClass("peak-item")
                 .attr("id", config.doi[i]["id"] + "-peak-item")
-                .css("top", config.doi[i]["y"])
+                .css("top", box.top + "px")
+                .css("left", box.left + "px")
+                .css("width", (box.right - box.left) + "px")
+                .css("height", (box.bottom - box.top) + "px")
+                .css("opacity", config.doi[i]["val"]/100)
                 .appendTo(view);
             var relHeight = (config.doiRange * 2 * 100 / $("#" + config.contentID).height());
             var relTop = (config.doi[i]["y"]*100 / $("#" + config.contentID).height());
@@ -709,6 +748,7 @@ var KineticScrolling = function ($, window, document) {
     }
 
     return {
-        init: init
+        init: init,
+        config: config
     };
 }(jQuery, window, document);
