@@ -21,12 +21,16 @@ var KineticScrolling = function ($, window, document) {
         // "val": strength of the signal (higher the better, min: 0, default: 0)
         // doi: [{450, 10}, {900, 20}, {1800, 5}, {3600, 40}],
         doi: [
-            {"node": null, "val": 10},
-            {"node": null, "val": 50},
-            {"node": null, "val": 30},
-            {"node": null, "val": 20},
-            {"node": null, "val": 40}
+            {"node": null, "highlightNode": null, "val": 10},
+            {"node": null, "highlightNode": null, "val": 50},
+            {"node": null, "highlightNode": null, "val": 30},
+            {"node": null, "highlightNode": null, "val": 20},
+            {"node": null, "highlightNode": null, "val": 40}
         ],
+
+        // apply kinetic scrolling to items above the given threshold DOI score
+        // the value should be between 10 to 100.
+        doiThreshold: 70,
 
         // is the DOI function defined for DOM nodes or y-position pixel values?
         doiOnDOM: true,
@@ -65,8 +69,8 @@ var KineticScrolling = function ($, window, document) {
         // show swing visualization for peak items
         isSwingShown: true,
 
-        // highlight peak items
-        isPeakItemShown: true,
+        // highlight nodes that explain why we're stopping
+        isPeakHighlightShown: true,
 
         // show peak summary visualization on the scroll bar
         isSummaryShown: true
@@ -143,6 +147,10 @@ var KineticScrolling = function ($, window, document) {
         }
     };
 
+    function isNumber(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+
     function init(configInput) {
         if (typeof configInput === "object") {
             // config = configInput;
@@ -167,13 +175,14 @@ var KineticScrolling = function ($, window, document) {
 
         // Parse URL parameters
 
-        var isPeakItemShown = gup("peak");
-        config.isPeakItemShown = isPeakItemShown == 1 ? true : (isPeakItemShown == 0) ? false : config.isPeakItemShown;
+        var isPeakHighlightShown = gup("highlight");
+        config.isPeakHighlightShown = isPeakHighlightShown == 1 ? true : (isPeakHighlightShown == 0) ? false : config.isPeakHighlightShown;
         var isSwingShown = gup("swing");
         config.isSwingShown = isSwingShown == 1 ? true : (isSwingShown == 0) ? false : config.isSwingShown;
         var isSummaryShown = gup("summary");
         config.isSummaryShown = isSummaryShown == 1 ? true : (isSummaryShown == 0) ? false : config.isSummaryShown;
-
+        var threshold = parseInt(gup("threshold"));
+        config.doiThreshold = isNumber(threshold) ? ((10 <= threshold && threshold <= 100) ? threshold : config.doiThreshold) : config.doiThreshold;
         // Custom settings for different devices
         if (isMobile.Android()) {
             config.slopeFactor = 100;
@@ -277,7 +286,7 @@ var KineticScrolling = function ($, window, document) {
     }
 */
 
-
+/*
     function getPeaksInRange(n1, n2) {
         var smaller = n1 < n2 ? n1 : n2;
         var larger = n1 >= n2 ? n1 : n2;
@@ -298,17 +307,20 @@ var KineticScrolling = function ($, window, document) {
         // console.log(smaller, larger, peaks);
         return {"peaks": peaks, "isReversed": (n1 > n2)};
     }
-
+*/
     function markPeaks() {
-        var i, node, box;
+        var i, node, hnode, box;
         for (i = 0; i < config.doi.length; i++) {
-            node = config.doi[i]["node"];
-            box = node.getBoundingClientRect();
+            if (config.doi[i]["val"] < config.doiThreshold)
+                continue;
+
+            hnode = config.doi[i]["highlightNode"];
             // console.log(box.left, box.right, box.top, box.bottom);
-            if (config.isPeakItemShown) {
+            if (config.isPeakHighlightShown && typeof hnode !== "undefined" && hnode !== null) {
+                box = hnode.getBoundingClientRect();
                 $("<div/>")
-                    .addClass("peak-item")
-                    .attr("id", config.doi[i]["id"] + "-peak-item")
+                    .addClass("peak-highlight")
+                    .attr("id", config.doi[i]["id"] + "-peak-highlight")
                     .css("top", box.top + "px")
                     .css("left", box.left + "px")
                     .css("width", (box.right - box.left) + "px")
@@ -316,7 +328,7 @@ var KineticScrolling = function ($, window, document) {
                     .css("opacity", Math.max(30, config.doi[i]["val"])/100)
                     .appendTo(view);
             }
-
+            // node = config.doi[i]["node"];
             if (config.isSummaryShown) {
                 var relHeight = (config.doiRange * 2 * 100 / $("#" + config.contentID).height());
                 var relTop = (config.doi[i]["y"]*100 / $("#" + config.contentID).height());
@@ -446,6 +458,9 @@ var KineticScrolling = function ($, window, document) {
         var a, factor = 0;
         var sFactor;
         for (i = 0; i < config.doi.length; i++) {
+            if (config.doi[i]["val"] < config.doiThreshold)
+                continue;
+
             // console.log(config.doi[i]);
             point = config.doi[i]["y"];
             // current offset is within the range of a hill caused by this doi
@@ -482,6 +497,9 @@ var KineticScrolling = function ($, window, document) {
         var a, factor = 0;
         var sFactor;
         for (i = 0; i < config.doi.length; i++) {
+            if (config.doi[i]["val"] < config.doiThreshold)
+                continue;
+
             // console.log(config.doi[i]);
             point = config.doi[i]["y"];
             // current offset is within the range of a hill caused by this doi
@@ -542,6 +560,9 @@ var KineticScrolling = function ($, window, document) {
         var curPeak;
         var i, point;
         for (i = 0; i < config.doi.length; i++) {
+            if (config.doi[i]["val"] < config.doiThreshold)
+                continue;
+
             // console.log(config.doi[i]);
             point = config.doi[i]["y"];
             // current offset is within the range of a hill caused by this doi
