@@ -170,7 +170,7 @@ color: rgba(255,255,255,0.65);
 
 .notes-markers {
 	position: absolute;
-	left: 95%;
+	left: 90%;
 	top: 0px;
 	width: 30px;
 	margin: 0px;
@@ -182,13 +182,24 @@ display: block;
 .notes-marker {
 position: absolute;
 left: 100%;
-width: 20px;
-height: 24px;
+width: 45px;
+height: 35px;
 padding: 10px;
 margin: -2px 0 0;
 cursor: pointer;
--webkit-tap-highlight-color: rgba(0,0,0,0);
 overflow: hidden;
+}
+
+.notes-marker-count {
+	background-image: url("bubble.png");
+	background-repeat: no-repeat;
+	background-position: center;
+	width: 45px;
+	height: 35px;
+	display: block;
+	text-align: center;
+	line-height: 32px;
+	font-size: 12px;
 }
 .no-user-select {
 -webkit-touch-callout: none;
