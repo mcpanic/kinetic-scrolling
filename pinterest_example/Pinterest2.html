@@ -8544,7 +8544,7 @@ $script.order=function(a,b,d){(function c(){var g=a.shift();a.length?$script(g,c
     		var repin = $(items[i]).find('.repinCountSmall');
     		if (repin.length == 1) {
     			var repin_val = parseInt(repin[0].innerText, 10)
-    			doi.push({"node": items[i], "val": repin_val});
+    			doi.push({"node": items[i], "highlightNode": repin[0], "val": repin_val});
     		}
 
 

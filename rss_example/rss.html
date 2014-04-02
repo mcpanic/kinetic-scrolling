@@ -8250,7 +8250,9 @@
     			else {
     				repin_val = 100;
     			}
-    			doi.push({"node": items[i], "val": repin_val});
+    			doi.push({"node": items[i], 
+    					  "highlightNode": repin[0],
+    					  "val": repin_val});
     		}
 		}
         KineticScrolling.init({
