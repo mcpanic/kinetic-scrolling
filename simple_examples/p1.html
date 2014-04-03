@@ -8,7 +8,12 @@
   <link rel="stylesheet" href="simple.css">
   <!-- styles needed by jScrollPane -->
   <link type="text/css" href="../css/jquery.jscrollpane.css" rel="stylesheet" media="all" />
-
+  <style>
+     .number {
+          width: 30px;
+          display: inline-block;
+     }
+  </style>
 
 </head>
 <body>
@@ -460,7 +465,7 @@
 <tr><td>Sei      </td></tr>
 <tr><td>Kigupuc  </td></tr>
 <tr><td>Adehry   </td></tr>
-<tr><td>Ted      </td></tr>
+<tr><td>Philip      </td></tr>
 <tr><td>Guafdus  </td></tr>
 <tr><td>Pitto    </td></tr>
 <tr><td>Aoiwon   </td></tr>
@@ -549,8 +554,11 @@
             {"node": entries[347], "val": 100}, // max
             {"node": entries[444], "val": 100} // ted
         ];
-        // Ted is there twice.
-        // Juho, Laura, Sarah, Anvisha
+        $("td").each(function(i) {
+          if (i > 1)
+               $(this).html("<span class='number'>" + (i-1) + "</span> " + $(this).text());
+        });
+        // Juho, Laura, Sarah, Anvisha, Philip
         // $("#content").jScrollPane();
         // api = $("#content").data('jsp');
         KineticScrolling.init({

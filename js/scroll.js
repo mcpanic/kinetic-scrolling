@@ -580,7 +580,7 @@ var KineticScrolling = function ($, window, document) {
             return;
         }
 
-        var $swingHead = $(".kscroll-swinghead");
+        var $swingHead = $(".kscroll-swinghead").show();
         // console.log($swingHead.position());
         // console.log("SWING", $(node).position().top, $(node).position().left);
         var armTop = "M 0 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + $(node).position().top;
@@ -592,21 +592,21 @@ var KineticScrolling = function ($, window, document) {
     }
 
     function showSwing() {
-        $(".kscroll-swinghead").show();
+        // $(".kscroll-swinghead").show();
         $(".kscroll-swingarm-top").css("opacity", 1).show();
         $(".kscroll-swingarm-bottom").css("opacity", 1).show();
     }
 
     function hideSwing() {
         $(".kscroll-swinghead").hide();
-        // $(".kscroll-swingarm-top, .kscroll-swingarm-bottom").animate({
-        //     opacity: 0
-        // }, 10000, function() {
-        //     // $(".kscroll-swingarm-top, .kscroll-swingarm-bottom").hide();
-        // });
-        setTimeout(function() {
-            $(".kscroll-swingarm-top, .kscroll-swingarm-bottom").hide();
-          }, 1500);
+        $(".kscroll-swingarm-top, .kscroll-swingarm-bottom").stop(true, false).animate({
+            opacity: 0
+        }, 3000, function() {
+            // $(".kscroll-swingarm-top, .kscroll-swingarm-bottom").hide();
+        });
+        // setTimeout(function() {
+        //     $(".kscroll-swingarm-top, .kscroll-swingarm-bottom").hide();
+        //   }, 1500);
 
     }
 
