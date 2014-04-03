@@ -73,7 +73,7 @@ var KineticScrolling = function ($, window, document) {
         isPeakHighlightShown: true,
 
         // show peak summary visualization on the scroll bar
-        isSummaryShown: true
+        isSummaryShown: false
     };
 
     var duringPeak = false;
@@ -507,7 +507,7 @@ var KineticScrolling = function ($, window, document) {
         var i;
         var point;
         var hitPeak = false;
-        var peaksInRange = [];
+        // var peaksInRange = [];
         var xList = [];
         var aList = [];
         // var newAmplitude = amplitude;
@@ -524,7 +524,7 @@ var KineticScrolling = function ($, window, document) {
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
                 console.log("UPHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
-                peaksInRange.push(config.doi[i]);
+                // peaksInRange.push(config.doi[i]);
                 xList.push(a * (offset + config.doiSnappingPosition - (point - config.doiRange)));
                 aList.push(a);
                 // break;
@@ -532,7 +532,7 @@ var KineticScrolling = function ($, window, document) {
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
                 console.log("DOWNHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
-                peaksInRange.push(config.doi[i]);
+                // peaksInRange.push(config.doi[i]);
                 xList.push(a * ((point + config.doiRange) - (offset + config.doiSnappingPosition)));
                 aList.push(a);
                 // break;
@@ -543,7 +543,7 @@ var KineticScrolling = function ($, window, document) {
         var max = 0;
         var maxA;
         // TODO: for minus a value, pick the biggest absolute value
-        for (i = 0; i < peaksInRange.length; i++) {
+        for (i = 0; i < xList.length; i++) {
             if (max <= xList[i]) {
                 max = xList[i];
                 maxA = aList[i];
@@ -554,7 +554,7 @@ var KineticScrolling = function ($, window, document) {
             // }
         }
         factor = Math.abs(maxA / Math.sqrt(maxA * maxA + 1));
-        console.log(factor, peaksInRange.length, "peaks overlapping", maxA, "is chosen among", aList, xList);
+        console.log(factor, xList.length, "peaks overlapping", maxA, "is chosen among", aList, xList);
         return factor;
     }
 
