@@ -59,18 +59,18 @@ text-decoration: none;
 color: rgb(51, 51, 50);
 display: block;
 font-family: jaf-bernino-sans, 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Geneva, Verdana, sans-serif;
-font-size: 18px;
+font-size: 16px;
 font-style: normal;
 font-weight: normal;
-height: 46111px;
+height: 53111px;
 letter-spacing: -0.36000001430511475px;
-line-height: 25px;
+line-height: 20px;
 overflow-x: hidden;
 overflow-y: hidden;
 visibility: visible;
 position: absolute;
 left:0px;
-width: 100%px;
+width: 100%;
 }
 .post-page-wrapper, .post-page-wrapper-inner {
 position: relative;
@@ -82,8 +82,8 @@ letter-spacing: -0.02em;
 font-weight: 400;
 font-style: normal;
 color: #333332;
-font-size: 18px;
-line-height: 1.4;
+font-size: 16px;
+line-height: 20px;
 -webkit-font-smoothing: antialiased;
 overflow-x: hidden;
 }
@@ -111,6 +111,47 @@ color: #666665;
 margin: 0;
 }
 
+.post-item-meta {
+font-size: 14px;
+color: #b3b3b1;
+}
+
+.post-content {
+	font-family: "jaf-bernino-sans","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Geneva,Verdana,sans-serif;
+letter-spacing: .01rem;
+font-weight: 400;
+font-style: normal;
+font-size: 21px;
+line-height: 1.45;
+}
+
+.body hr {
+display: block;
+width: 14%;
+margin: 50px auto 40px auto;
+border: 0;
+border-top: 1px solid #dededc;
+}
+
+
+
+.image-outset-center {
+	width: 630px;
+	position: relative;
+	left: 100px;
+	margin-top:30px;
+	margin-bottom: 10px;
+}
+
+.image-caption {
+	width: 630px;
+}
+
+img {
+	width: 630px;
+	height: auto;
+}
+
 .post-item-meta-avatar {
 display: inline-block;
 width: 30px;
@@ -128,19 +169,6 @@ height: 32px;
 border-radius: 100%;
 }
 
-.post-item-meta {
-font-size: 14px;
-color: #b3b3b1;
-}
-
-.post-content {
-	font-family: "jaf-bernino-sans","Lucida Grande","Lucida Sans Unicode","Lucida Sans",Geneva,Verdana,sans-serif;
-letter-spacing: .01rem;
-font-weight: 400;
-font-style: normal;
-font-size: 22px;
-line-height: 1.5;
-}
 
 .layout-single-column {
 width: 640px;
@@ -168,10 +196,22 @@ font-style: normal;
 color: rgba(255,255,255,0.65);
 }
 
+.image-caption {
+font-family: "freight-text-pro",Georgia,Cambria,"Times New Roman",Times,serif;
+letter-spacing: .01rem;
+font-weight: 400;
+font-style: italic;
+font-size: 14px;
+line-height: 1.4;
+color: #666665;
+outline: 0;
+z-index: 300;
+}
+
 .notes-markers {
 	position: absolute;
 	left: 90%;
-	top: 0px;
+	top: 330px;
 	width: 30px;
 	margin: 0px;
 	padding: 0px;
