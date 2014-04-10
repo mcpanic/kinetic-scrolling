@@ -56,7 +56,7 @@ var KineticScrolling = function ($, window, document) {
 
         // How steep the peak slope should be, when the target is within the viewport.
         // Set to something higher than slopeFactor to further delerate.
-        slopeViewportFactor: 10000000,
+        slopeViewportFactor: 1000000,
 
         // How steep the peak slope should be when dragging.
         // Higher value means the scrolling decelerates more.
@@ -65,6 +65,9 @@ var KineticScrolling = function ($, window, document) {
         // How steep the peak slope should be when dragging, when the target is within the viewport.
         // Set to something higher than slopeFactor to further delerate.
         slopeDragViewportFactor: 10,
+
+        // Apply kinetic scrolling or default exponential decay only
+        isKineticScrollingOn: true,
 
         // show swing visualization for peak items
         isSwingShown: true,
@@ -174,13 +177,20 @@ var KineticScrolling = function ($, window, document) {
         }
 
         // Parse URL parameters
-
-        var isPeakHighlightShown = gup("highlight");
-        config.isPeakHighlightShown = isPeakHighlightShown == 1 ? true : (isPeakHighlightShown == 0) ? false : config.isPeakHighlightShown;
-        var isSwingShown = gup("swing");
-        config.isSwingShown = isSwingShown == 1 ? true : (isSwingShown == 0) ? false : config.isSwingShown;
-        var isSummaryShown = gup("summary");
-        config.isSummaryShown = isSummaryShown == 1 ? true : (isSummaryShown == 0) ? false : config.isSummaryShown;
+        var isKineticScrollingOn = gup("ks");
+        config.isKineticScrollingOn = isKineticScrollingOn == 1 ? true : (isKineticScrollingOn == 0) ? false : config.isKineticScrollingOn;
+        if (config.isKineticScrollingOn) {
+            var isPeakHighlightShown = gup("highlight");
+            config.isPeakHighlightShown = isPeakHighlightShown == 1 ? true : (isPeakHighlightShown == 0) ? false : config.isPeakHighlightShown;
+            var isSwingShown = gup("swing");
+            config.isSwingShown = isSwingShown == 1 ? true : (isSwingShown == 0) ? false : config.isSwingShown;
+            var isSummaryShown = gup("summary");
+            config.isSummaryShown = isSummaryShown == 1 ? true : (isSummaryShown == 0) ? false : config.isSummaryShown;
+        } else {
+            config.isPeakHighlightShown = false;
+            config.isSwingShown = false;
+            config.isSummaryShown = false;
+        }
         var threshold = parseInt(gup("threshold"));
         config.doiThreshold = isNumber(threshold) ? ((10 <= threshold && threshold <= 100) ? threshold : config.doiThreshold) : config.doiThreshold;
         // Custom settings for different devices
@@ -462,7 +472,7 @@ var KineticScrolling = function ($, window, document) {
                 break;
             }
         }
-        console.log("isPeakInViewport", result);
+        // console.log("isPeakInViewport", result);
         return result;
     }
 
@@ -522,7 +532,7 @@ var KineticScrolling = function ($, window, document) {
             // hill width: +/-config.doiRange
             if (point - config.doiRange <= offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <= point) { // uphill
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
-                console.log("UPHILL", sFactor);
+                // console.log("UPHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * (offset + config.doiSnappingPosition - (point - config.doiRange));
                 // peaksInRange.push(config.doi[i]);
                 xList.push(a * (offset + config.doiSnappingPosition - (point - config.doiRange)));
@@ -530,7 +540,7 @@ var KineticScrolling = function ($, window, document) {
                 // break;
             } else if (point < offset + config.doiSnappingPosition && offset + config.doiSnappingPosition <=  point + config.doiRange) {
                 sFactor = isElementInViewport(config.doi[i]["node"]) ? config.slopeViewportFactor : config.slopeFactor;
-                console.log("DOWNHILL", sFactor);
+                // console.log("DOWNHILL", sFactor);
                 a = 2 * config.doi[i]["val"] * sFactor / (config.doiRange * config.doiRange) * ((point + config.doiRange) - (offset + config.doiSnappingPosition));
                 // peaksInRange.push(config.doi[i]);
                 xList.push(a * ((point + config.doiRange) - (offset + config.doiSnappingPosition)));
@@ -554,7 +564,7 @@ var KineticScrolling = function ($, window, document) {
             // }
         }
         factor = Math.abs(maxA / Math.sqrt(maxA * maxA + 1));
-        console.log(factor, xList.length, "peaks overlapping", maxA, "is chosen among", aList, xList);
+        // console.log(factor, xList.length, "peaks overlapping", maxA, "is chosen among", aList, xList);
         return factor;
     }
 
@@ -580,11 +590,16 @@ var KineticScrolling = function ($, window, document) {
             return;
         }
 
+        var box = node.getBoundingClientRect();
         var $swingHead = $(".kscroll-swinghead").show();
         // console.log($swingHead.position());
         // console.log("SWING", $(node).position().top, $(node).position().left);
-        var armTop = "M 0 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + $(node).position().top;
-        var armBottom = "M 0 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + ($(node).position().top + $(node).height());
+        // var armTop = "M 0 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + $(node).position().top;
+        // var armBottom = "M 0 " + ($swingHead.position().top + 10) + " L " + (Math.max(50, $(node).position().left)) + " " + ($(node).position().top + $(node).height());
+
+        var armTop = "M 0 " + ($swingHead.position().top + 10) + " L " + 50 + " " + box.top;
+        var armBottom = "M 0 " + ($swingHead.position().top + 10) + " L " + 50 + " " + (box.top + box.height);
+
         // console.log(armTop, armBottom);
         armTopPath.attr("path", armTop);
         armBottomPath.attr("path", armBottom);
@@ -647,6 +662,21 @@ var KineticScrolling = function ($, window, document) {
         return hitPeak;
     }
 
+    // without kinetic scrolling
+    function autoScrollDefault() {
+        var elapsed, delta;
+        if (amplitude) {
+            elapsed = Date.now() - timestamp;
+            delta = -amplitude * Math.exp(-elapsed / config.timeConstant);
+            if (delta > 0.5 || delta < -0.5) {
+                scroll(target + delta);
+                requestAnimationFrame(autoScrollDefault);
+            } else {
+                scroll(target);
+            }
+        }
+    }
+
 
     var curV;
     var g;
@@ -686,9 +716,9 @@ var KineticScrolling = function ($, window, document) {
         oldTime = now;
         elapsed = now - timestamp; // total time since last transition
         // console.log("timeSince", timeSinceLastCall, "elapsed", elapsed);
-        console.log("isPeakOnRelease", isPeakOnRelease);
+        // console.log("isPeakOnRelease", isPeakOnRelease);
         if (!isPeakOnRelease && duringPeak) {
-            console.log("a applied: YES");
+            // console.log("a applied: YES");
             accel = g * getSinTheta();
         } else {
             // Add 1.1 to make it a bit stiffer.
@@ -697,13 +727,13 @@ var KineticScrolling = function ($, window, document) {
             if (isMobile.Android())
                 decelFactor = 1.15;
             accel = decelFactor * amplitude / (config.timeConstant * config.timeConstant) * Math.exp(-elapsed / config.timeConstant);
-            console.log("a applied: NO", accel);
+            // console.log("a applied: NO", accel);
         }
         // if peak not in viewport anymore, cancel the flag
         // it will never be set to true here.
         if (isPeakOnRelease && !isPeakInViewport()) {
             isPeakOnRelease = false;
-            console.log("PEAK out of viewport");
+            // console.log("PEAK out of viewport");
         }
 
         if (accel > 0) { //  && oldOffset >= 0
@@ -961,9 +991,12 @@ var KineticScrolling = function ($, window, document) {
             oldTime = timestamp;
             oldOffset = 0;
             isPeakOnRelease = isPeakInViewport();
-            console.log("RELEASE WITH", target, offset, curV, g);
-            console.log("RELEASE WITH PEAK", isPeakOnRelease);
-            requestAnimationFrame(autoScroll);
+            // console.log("RELEASE WITH", target, offset, curV, g);
+            // console.log("RELEASE WITH PEAK", isPeakOnRelease);
+            if (config.isKineticScrollingOn)
+                requestAnimationFrame(autoScroll);
+            else
+                requestAnimationFrame(autoScrollDefault);
 
         }
         // var peakTarget = getPeaksInRange(offset, target);
@@ -983,6 +1016,7 @@ var KineticScrolling = function ($, window, document) {
 
     return {
         init: init,
-        config: config
+        config: config,
+        gup: gup
     };
 }(jQuery, window, document);
