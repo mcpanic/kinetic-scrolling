@@ -74,10 +74,10 @@
                 // "&ttype=" + Log.tutorialExp.ttype +
                 // "&vcode=" + Log.tutorialExp.vcode;
         $("<div/>")
-            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialConUrl + "'>Tutorial 1</a>&nbsp;&nbsp;&nbsp;No highlights")
+            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialConUrl + "'>Tutorial 1</a>&nbsp;&nbsp;&nbsp;No feedback")
             .appendTo($("#tasks"));
         $("<div/>")
-            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialExpUrl + "'>Tutorial 2</a>&nbsp;&nbsp;&nbsp;Highlights")
+            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialExpUrl + "'>Tutorial 2</a>&nbsp;&nbsp;&nbsp;Feedback")
             .appendTo($("#tasks"));
 
         for (i = 1; i <= numTasks; i++) {
@@ -124,9 +124,9 @@
                 else
                     qUrl = Log.part3QuestionnaireUrlYes;
             }
-            var cond = "Highlights";
+            var cond = "Feedback";
             if (task.iid == "con")
-                cond = "No highlights";
+                cond = "No feedback";
             $("<div/>")
                 .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span>" +
                     "<a target='_blank' href='" + url + "'>Task " + task.torder + "</a>&nbsp;&nbsp;&nbsp;" + cond + "&nbsp;&nbsp;&nbsp;(" + task.vcode + ")")
