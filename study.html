@@ -16,6 +16,7 @@
         a, a:active, a:visited {
             color: #222;
             font-weight: bold;
+            font-size: 24px;
         }
         a:hover {
             color: teal;
@@ -73,10 +74,10 @@
                 // "&ttype=" + Log.tutorialExp.ttype +
                 // "&vcode=" + Log.tutorialExp.vcode;
         $("<div/>")
-            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialConUrl + "'>Tutorial 1</a>")
+            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialConUrl + "'>Tutorial 1</a>&nbsp;&nbsp;&nbsp;No highlights")
             .appendTo($("#tasks"));
         $("<div/>")
-            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialExpUrl + "'>Tutorial 2</a>")
+            .html("<span class='progress'>&nbsp;&nbsp;&nbsp;</span><a target='_blank' href='" + tutorialExpUrl + "'>Tutorial 2</a>&nbsp;&nbsp;&nbsp;Highlights")
             .appendTo($("#tasks"));
 
         for (i = 1; i <= numTasks; i++) {

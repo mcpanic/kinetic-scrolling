@@ -165,7 +165,7 @@ var KineticScrolling = function ($, window, document) {
                     console.log("Invalid config name:", key);
                 }
             }
-            console.log(config);
+            // console.log(config);
         } else {
             console.log("Error: no config object detected.");
         }
@@ -221,7 +221,7 @@ var KineticScrolling = function ($, window, document) {
         // scrollbar showing on the left
         indicator = document.getElementById(config.indicatorID);
         relative = (innerHeight - 30) / max;
-        console.log("relative", relative);
+        // console.log("relative", relative);
         if (config.isSwingShown) {
             $("<div/>")
                 .attr("id", config.swingheadID)
@@ -283,7 +283,7 @@ var KineticScrolling = function ($, window, document) {
             config.doi[i]["y"] = node.offsetTop;
         }
         config.doiSnappingPosition = screen.height / 2.5;
-        console.log(config.doi, config.doiSnappingPosition);
+        // console.log(config.doi, config.doiSnappingPosition);
         // TODO sort based on offset?
     }
 /*
@@ -692,13 +692,13 @@ var KineticScrolling = function ($, window, document) {
         var isInPeak = checkPeaks();
         // transition from peak to non-peak
         if (duringPeak && !isInPeak) {
-            console.log("TRANSITION p -> np");
+            // console.log("TRANSITION p -> np");
             duringPeak = false;
             amplitude = curV * config.timeConstant;
             // console.log("A", amplitude);
             timestamp = now;
         } else if (!duringPeak && isInPeak) {
-            console.log("TRANSITION np -> p");
+            // console.log("TRANSITION np -> p");
             duringPeak = true;
             // console.log(accel, curV);
             // undefined check: when a peak is applied to the top element in a page,
@@ -760,13 +760,13 @@ var KineticScrolling = function ($, window, document) {
             if (!pressed) {
                 requestAnimationFrame(autoScroll);
             } else {
-                console.log("STOP REQUESTING"); // because there's a continuous tapping
+                // console.log("STOP REQUESTING"); // because there's a continuous tapping
             }
         } else {
             curTarget = (curTarget > max) ? max : (curTarget < min) ? min : curTarget;
             scroll(curTarget);
             hideSwing();
-            console.log("STOPPED SCROLLING AT", offset)
+            // console.log("STOPPED SCROLLING AT", offset)
         }
         return;
     }
@@ -931,7 +931,7 @@ var KineticScrolling = function ($, window, document) {
         // timeFreezeElapsed = 0;
         // timeFreeze = 0;
         // isTimeUpdated = true;
-        console.log("TAP");
+        // console.log("TAP");
 
         pressed = true;
         // peakIncluded = false;
