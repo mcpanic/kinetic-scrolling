@@ -323,7 +323,7 @@ var KineticScrolling = function ($, window, document) {
         for (i = 0; i < config.doi.length; i++) {
             if (config.doi[i]["val"] < config.doiThreshold)
                 continue;
-
+            console.log("y");
             hnode = config.doi[i]["highlightNode"];
             // console.log(box.left, box.right, box.top, box.bottom);
             if (config.isPeakHighlightShown && typeof hnode !== "undefined" && hnode !== null) {
