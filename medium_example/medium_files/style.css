@@ -62,7 +62,8 @@ font-family: jaf-bernino-sans, 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida S
 font-size: 16px;
 font-style: normal;
 font-weight: normal;
-height: 53111px;
+/* Juho: 20141006 shortened version for UIST demo */
+/*height: 53111px;*/
 letter-spacing: -0.36000001430511475px;
 line-height: 20px;
 overflow-x: hidden;
